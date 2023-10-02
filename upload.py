@@ -7,31 +7,14 @@ from src.trackers.HUNO import HUNO
 from src.trackers.BLU import BLU
 from src.trackers.BHD import BHD
 from src.trackers.AITHER import AITHER
-from src.trackers.STC import STC
-from src.trackers.R4E import R4E
-from src.trackers.THR import THR
-from src.trackers.STT import STT
-from src.trackers.HP import HP
 from src.trackers.PTP import PTP
-from src.trackers.SN import SN
-from src.trackers.ACM import ACM
 from src.trackers.HDB import HDB
-from src.trackers.LCD import LCD
-from src.trackers.TTG import TTG
-from src.trackers.LST import LST
-from src.trackers.FL import FL
 from src.trackers.LT import LT
-from src.trackers.NBL import NBL
-from src.trackers.ANT import ANT
 from src.trackers.PTER import PTER
 from src.trackers.MTV import MTV
-from src.trackers.JPTV import JPTV
 from src.trackers.TL import TL
-from src.trackers.TDC import TDC
 from src.trackers.HDT import HDT
-from src.trackers.RF import RF
-from src.trackers.OE import OE
-from src.trackers.BHDTV import BHDTV
+
 import json
 from pathlib import Path
 import asyncio
@@ -145,7 +128,7 @@ async def do_the_thing(base_dir):
                 console.print("\n[bold green]Queuing these files:[/bold green]", end='')
                 console.print(Markdown(f"- {md_text.rstrip()}\n\n", style=Style(color='cyan')))
                 console.print("\n\n")
-            
+
         else:
             # Add Search Here
             console.print(f"[red]There was an issue with your input. If you think this was not an issue, please make a report that includes the full command used.")
@@ -243,12 +226,12 @@ async def do_the_thing(base_dir):
         #######  Upload to Trackers  #######
         ####################################
         common = COMMON(config=config)
-        api_trackers = ['BLU', 'AITHER', 'STC', 'R4E', 'STT', 'RF', 'ACM','LCD','LST','HUNO', 'SN', 'LT', 'NBL', 'ANT', 'JPTV', 'TDC', 'OE', 'BHDTV']
-        http_trackers = ['HDB', 'TTG', 'FL', 'PTER', 'HDT', 'MTV']
+        api_trackers = ['BLU', 'AITHER', 'HUNO', 'LT']
+        http_trackers = ['HDB', 'PTER', 'HDT', 'MTV']
         tracker_class_map = {
-            'BLU' : BLU, 'BHD': BHD, 'AITHER' : AITHER, 'STC' : STC, 'R4E' : R4E, 'THR' : THR, 'STT' : STT, 'HP' : HP, 'PTP' : PTP, 'RF' : RF, 'SN' : SN, 
-            'ACM' : ACM, 'HDB' : HDB, 'LCD': LCD, 'TTG' : TTG, 'LST' : LST, 'HUNO': HUNO, 'FL' : FL, 'LT' : LT, 'NBL' : NBL, 'ANT' : ANT, 'PTER': PTER, 'JPTV' : JPTV,
-            'TL' : TL, 'TDC' : TDC, 'HDT' : HDT, 'MTV': MTV, 'OE': OE, 'BHDTV': BHDTV
+            'BLU': BLU, 'BHD': BHD, 'AITHER': AITHER, 'PTP': PTP,
+            'HDB': HDB, 'HUNO': HUNO, 'LT': LT, 'PTER': PTER,
+            'TL': TL, 'HDT': HDT, 'MTV': MTV
             }
 
         for tracker in trackers:
@@ -259,7 +242,7 @@ async def do_the_thing(base_dir):
                 debug = "(DEBUG)"
             else:
                 debug = ""
-            
+
             if tracker in api_trackers:
                 tracker_class = tracker_class_map[tracker](config=config)
                 if meta['unattended']:
@@ -340,35 +323,6 @@ async def do_the_thing(base_dir):
                     if meta['upload'] == True:
                         await bhd.upload(meta)
                         await client.add_to_client(meta, "BHD")
-            
-            if tracker == "THR":
-                if meta['unattended']:
-                    upload_to_thr = True
-                else:
-                    upload_to_thr = cli_ui.ask_yes_no(f"Upload to THR? {debug}", default=meta['unattended'])
-                if upload_to_thr:
-                    console.print("Uploading to THR")
-                    #Unable to get IMDB id/Youtube Link
-                    if meta.get('imdb_id', '0') == '0':
-                        imdb_id = cli_ui.ask_string("Unable to find IMDB id, please enter e.g.(tt1234567)")
-                        meta['imdb_id'] = imdb_id.replace('tt', '').zfill(7)
-                    if meta.get('youtube', None) == None:
-                        youtube = cli_ui.ask_string("Unable to find youtube trailer, please link one e.g.(https://www.youtube.com/watch?v=dQw4w9WgXcQ)")
-                        meta['youtube'] = youtube
-                    thr = THR(config=config)
-                    try:
-                        with requests.Session() as session:
-                            console.print("[yellow]Logging in to THR")
-                            session = thr.login(session)
-                            console.print("[yellow]Searching for Dupes")
-                            dupes = thr.search_existing(session, meta.get('imdb_id'))
-                            dupes = await common.filter_dupes(dupes, meta)
-                            meta = dupe_check(dupes, meta)
-                            if meta['upload'] == True:
-                                await thr.upload(session, meta)
-                                await client.add_to_client(meta, "THR")
-                    except:
-                        console.print(traceback.print_exc())
 
             if tracker == "PTP":
                 if meta['unattended']:
@@ -419,7 +373,6 @@ async def do_the_thing(base_dir):
                         continue
                     await tracker_class.upload(meta)
                     await client.add_to_client(meta, tracker_class.tracker)
-            
 
 
 def get_confirmation(meta):
@@ -445,7 +398,7 @@ def get_confirmation(meta):
     if int(meta.get('freeleech', '0')) != 0:
         cli_ui.info(f"Freeleech: {meta['freeleech']}")
     if meta['tag'] == "":
-            tag = ""
+        tag = ""
     else:
         tag = f" / {meta['tag'][1:]}"
     if meta['is_disc'] == "DVD":
@@ -468,11 +421,12 @@ def get_confirmation(meta):
         confirm = True
     return confirm
 
+
 def dupe_check(dupes, meta):
     if not dupes:
-            console.print("[green]No dupes found")
-            meta['upload'] = True   
-            return meta
+        console.print("[green]No dupes found")
+        meta['upload'] = True   
+        return meta
     else:
         console.print()    
         dupe_text = "\n".join(dupes)
@@ -524,14 +478,15 @@ def check_banned_group(tracker, banned_group_list, meta):
                 return True
     return False
 
+
 def get_missing(meta):
     info_notes = {
-        'edition' : 'Special Edition/Release',
-        'description' : "Please include Remux/Encode Notes if possible (either here or edit your upload)",
-        'service' : "WEB Service e.g.(AMZN, NF)",
-        'region' : "Disc Region",
-        'imdb' : 'IMDb ID (tt1234567)',
-        'distributor' : "Disc Distributor e.g.(BFI, Criterion, etc)"
+        'edition': 'Special Edition/Release',
+        'description': "Please include Remux/Encode Notes if possible (either here or edit your upload)",
+        'service': "WEB Service e.g.(AMZN, NF)",
+        'region': "Disc Region",
+        'imdb': 'IMDb ID (tt1234567)',
+        'distributor': "Disc Distributor e.g.(BFI, Criterion, etc)"
     }
     missing = []
     if meta.get('imdb_id', '0') == '0':
@@ -566,4 +521,3 @@ if __name__ == '__main__':
             loop.run_until_complete(do_the_thing(base_dir))
         else:
             asyncio.run(do_the_thing(base_dir))
-        
